@@ -1,0 +1,8 @@
+projects.tsv
+workspace/
+logs/
+results.json
+leaderboard.txt
+.venv/
+__pycache__/
+*.pyc
