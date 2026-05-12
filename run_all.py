@@ -195,9 +195,14 @@ def run_bot(idx: str, repo_url_raw: str) -> Result:
 
     print(f"\n=== [{idx}] {repo} ===")
     print(f"[{idx}] cloning…")
+    clone_env = os.environ.copy()
+    # Don't let git prompt for a username/password on private/missing repos.
+    clone_env["GIT_TERMINAL_PROMPT"] = "0"
+    clone_env["GIT_ASKPASS"] = "/bin/true"
+    clone_env["GCM_INTERACTIVE"] = "Never"
     r = subprocess.run(
         ["git", "clone", "--depth=1", "--recurse-submodules", repo, str(project_dir)],
-        capture_output=True, text=True, timeout=CLONE_TIMEOUT,
+        capture_output=True, text=True, timeout=CLONE_TIMEOUT, env=clone_env,
     )
     if r.returncode != 0:
         res.error = "clone failed: " + r.stderr.strip().splitlines()[-1:][0] if r.stderr else "clone failed"
