@@ -30,6 +30,10 @@ RESULTS_JSON  = ROOT / "results.json"
 LEADERBOARD   = ROOT / "leaderboard.txt"
 
 RUN_SECONDS   = 60
+# Many bots self-terminate at their own 60-s mark and then print the final
+# cookie count + call driver.quit(). Give them a window to finish printing
+# before we force-kill, otherwise we lose the score.
+RUN_GRACE     = 30
 CLONE_TIMEOUT = 120
 PIP_TIMEOUT   = 300
 KILL_GRACE    = 8
@@ -255,13 +259,14 @@ def run_bot(idx: str, repo_url_raw: str) -> Result:
         )
 
         try:
-            while time.monotonic() - start < RUN_SECONDS:
+            deadline = start + RUN_SECONDS + RUN_GRACE
+            while time.monotonic() < deadline:
                 if proc.poll() is not None:
                     break
                 time.sleep(0.25)
         finally:
             duration = time.monotonic() - start
-            res.duration = round(duration, 2)
+            res.duration = round(min(duration, RUN_SECONDS), 2)
             try:
                 os.killpg(proc.pid, signal.SIGTERM)
             except ProcessLookupError:
